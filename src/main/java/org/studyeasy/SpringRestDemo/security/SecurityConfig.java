@@ -71,8 +71,9 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable()) // 🔹 Disable CSRF for stateless APIs
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // ✅ Enforce Stateless Sessions
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/token","/swagger-ui/**", "/v3/api-docs/**","/db-console/**").permitAll()
-                .requestMatchers("/test").authenticated()
+                .requestMatchers("/", "/auth/token","/swagger-ui/**", "/v3/api-docs/**","/db-console/**").permitAll()
+                .requestMatchers("/auth/profile","/auth/profile/update-password").authenticated()
+                .requestMatchers("/auth/users").hasAuthority("SCOPE_ADMIN")
                 
             )
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults())) // ✅ Configure JWT-based Authentication
