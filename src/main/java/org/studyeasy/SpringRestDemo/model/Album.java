@@ -16,7 +16,8 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-
+@AllArgsConstructor
+@NoArgsConstructor
 public class Album {
   @Id
   @GeneratedValue(strategy = GenerationType.SEQUENCE)
