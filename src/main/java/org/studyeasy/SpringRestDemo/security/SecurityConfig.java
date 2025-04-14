@@ -16,6 +16,8 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
 import com.nimbusds.jose.JOSEException;
@@ -65,18 +67,31 @@ public class SecurityConfig {
     }
 
     @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+    JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+    jwtGrantedAuthoritiesConverter.setAuthorityPrefix("SCOPE_");
+    jwtGrantedAuthoritiesConverter.setAuthoritiesClaimName("scope");
+
+    JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+    jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
+    return jwtAuthenticationConverter;
+}
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.disable()) // 🔹 Enable if your API serves from different origins
             .csrf(csrf -> csrf.disable()) // 🔹 Disable CSRF for stateless APIs
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // ✅ Enforce Stateless Sessions
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/auth/token","/swagger-ui/**", "/v3/api-docs/**","/db-console/**").permitAll()
-                .requestMatchers("/auth/profile","/auth/profile/update-password").authenticated()
-                .requestMatchers("/auth/users").hasAuthority("SCOPE_ADMIN")
+                .requestMatchers("/", "/api/v1/auth/token","/swagger-ui/**", "/v3/api-docs/**","/db-console/**").permitAll()
+                .requestMatchers("/api/v1/auth/profile","/api/v1/auth/profile/update-password","/api/v1/auth/profile/delete").authenticated()
+                .requestMatchers("/api/v1/auth/users","/api/v1/auth/users/{user_id}/update-authorities").hasAuthority("SCOPE_ADMIN")
                 
             )
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults())) // ✅ Configure JWT-based Authentication
+            .oauth2ResourceServer(oauth2 -> oauth2
+            .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+        ) 
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin()) // ✅ Properly Configured for H2 Console Support
             );

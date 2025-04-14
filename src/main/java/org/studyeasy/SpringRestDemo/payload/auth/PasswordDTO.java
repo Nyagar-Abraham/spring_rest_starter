@@ -8,7 +8,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-
 public class PasswordDTO {
   @Size(min = 6, max = 20)
    @Schema(description = "password", example = "pass747word",requiredMode = RequiredMode.REQUIRED, minLength = 6, maxLength = 20)

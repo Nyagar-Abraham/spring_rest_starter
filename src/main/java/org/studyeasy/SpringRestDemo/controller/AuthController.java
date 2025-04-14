@@ -11,7 +11,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.studyeasy.SpringRestDemo.model.Account;
 import org.studyeasy.SpringRestDemo.payload.auth.AccountDTO;
 import org.studyeasy.SpringRestDemo.payload.auth.AccountViewDTO;
+import org.studyeasy.SpringRestDemo.payload.auth.AuthoritiesDTO;
 import org.studyeasy.SpringRestDemo.payload.auth.PasswordDTO;
 import org.studyeasy.SpringRestDemo.payload.auth.ProfileDTO;
 import org.studyeasy.SpringRestDemo.payload.auth.TokenDTO;
@@ -42,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/v1/auth")
 @Tag(name = "Auth Controller", description = "The auth API")
 @Slf4j
 public class AuthController {
@@ -113,6 +116,32 @@ public List<AccountViewDTO> users(){
 }
 
 
+// UPDATE USER AUTHORITIES
+@PutMapping(value = "/users/{user_id}/update-authorities", produces = "application/json", consumes = "application/json")
+@ApiResponse(responseCode = "200",description = "update authorities")
+@ApiResponse(responseCode = "401",description = "Token missing")
+@ApiResponse(responseCode = "400",description = "Invalid user ID")
+@ApiResponse(responseCode = "403",description = "Token Error")
+@Operation(summary = "Update authorities")
+@SecurityRequirement(name = "studyeasy-demo-api")
+public ResponseEntity<AccountViewDTO>  update_auth(@Valid @RequestBody AuthoritiesDTO authoritiesDTO, @PathVariable long user_id ){
+  
+  Optional<Account> optionalAccount = accountService.findById(user_id);
+
+  if(optionalAccount.isPresent()){
+    Account account = optionalAccount.get();
+    account.setAuthorities(authoritiesDTO.getAuthorities());
+    accountService.save(account);
+
+    AccountViewDTO accountViewDTO = new AccountViewDTO(account.getId(), account.getEmail(), account.getAuthorities());
+
+    return ResponseEntity.ok(accountViewDTO) ;
+  }
+  return new ResponseEntity<AccountViewDTO>(new AccountViewDTO(), HttpStatus.BAD_REQUEST);
+}
+
+
+// GET USER PROFILE
 @GetMapping(value = "/profile", produces = "application/json")
 @ApiResponse(responseCode = "200",description = "User profile")
 @ApiResponse(responseCode = "401",description = "Token missing")
@@ -123,27 +152,29 @@ public ProfileDTO profile(Authentication authentication){
   String email = authentication.getName();
   Optional<Account> optionalAccount = accountService.findByEmail(email);
 
-  if(optionalAccount.isPresent()){
+
     Account account = optionalAccount.get();
     ProfileDTO profileDTO = new ProfileDTO(account.getId(),account.getEmail(),account.getAuthorities());
 
     return profileDTO;
-  }
-  return null;
+
+ 
 }
 
+
+// UPDATE USER PASSWORD
 @PutMapping(value = "/profile/update-password", produces = "application/json", consumes = "application/json")
 @ApiResponse(responseCode = "200",description = "update profile")
 @ApiResponse(responseCode = "401",description = "Token missing")
-@ApiResponse(responseCode = "401",description = "Token Error")
+@ApiResponse(responseCode = "403",description = "Token Error")
 @Operation(summary = "Update profile")
- @SecurityRequirement(name = "studyeasy-demo-api")
+@SecurityRequirement(name = "studyeasy-demo-api")
 public AccountViewDTO update_password(@Valid @RequestBody PasswordDTO passwordDTO, Authentication authentication){
   String email = authentication.getName();
 
   Optional<Account> optionalAccount = accountService.findByEmail(email);
 
-  if(optionalAccount.isPresent()){
+
     Account account = optionalAccount.get();
     account.setPassword(passwordDTO.getPassword());
     accountService.save(account);
@@ -151,8 +182,29 @@ public AccountViewDTO update_password(@Valid @RequestBody PasswordDTO passwordDT
     AccountViewDTO accountViewDTO = new AccountViewDTO(account.getId(), account.getEmail(), account.getAuthorities());
 
     return accountViewDTO;
+  
+ 
+}
+
+
+// DELETE USER
+@DeleteMapping(value = "/profile/delete", produces = "application/json", consumes = "application/json")
+@ApiResponse(responseCode = "200",description = "Delete profile")
+@ApiResponse(responseCode = "401",description = "Token missing")
+@ApiResponse(responseCode = "403",description = "Token Error")
+@Operation(summary = "Delete profile")
+@SecurityRequirement(name = "studyeasy-demo-api")
+public ResponseEntity<String> delete_profile( Authentication authentication){
+  String email = authentication.getName();
+
+  Optional<Account> optionalAccount = accountService.findByEmail(email);
+
+  if(optionalAccount.isPresent()){
+    accountService.deleteByID(optionalAccount.get().getId());
+    return ResponseEntity.ok("User deleted");
   }
-  return null;
+
+  return new ResponseEntity<String>("Bad request", HttpStatus.BAD_REQUEST);
 }
 
 }
