@@ -85,7 +85,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // ✅ Enforce Stateless Sessions
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/api/v1/auth/token","/swagger-ui/**", "/v3/api-docs/**","/db-console/**").permitAll()
-                .requestMatchers("/api/v1/auth/profile","/api/v1/auth/profile/update-password","/api/v1/auth/profile/delete","/api/v1/album/albums/add","/api/v1/album/albums").authenticated()
+                .requestMatchers("/api/v1/auth/profile","/api/v1/auth/profile/update-password","/api/v1/auth/profile/delete","/api/v1/albums/add","/api/v1/albums","/api/v1/albums/{album_id}/upload-photos","/api/v1/albums/{album_id}/photos/{photo_id}/**","/api/v1/albums/{album_id}").authenticated()
                 .requestMatchers("/api/v1/auth/users","/api/v1/auth/users/{user_id}/update-authorities").hasAuthority("SCOPE_ADMIN")
                 
             )
